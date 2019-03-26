@@ -162,6 +162,91 @@ private:
   int parallel_;
 };
 
+// A mapper which can be used with a chain of non-square panels arranged
+// by turning each panel by 90 degrees clockwise or anti-clockwise
+// depending on panel position in the chain, making the interconnections
+// shorter.
+// For example, 5 64x32 panels can be arranged in a 160x64 matrix:
+// Raspberry Pi connector
+//    ↓
+//   ╭─╮╭─╮╭─╮╭─╮╭─╮
+//   │↓││↑││↓││↑││↓│
+//   │↓││↑││↓││↑││↓│
+//   ╰─╯╰─╯╰─╯╰─╯╰─╯
+// The mapper takes "left" or "right" as an argument, which denotes
+// on which side the RPi is connected to the chain. It defaults to "left".
+class SnakeArrangementMapper : public PixelMapper {
+public:
+  SnakeArrangementMapper() : chain_(1), parallel_(1), source_side_(0) {}
+
+  virtual const char *GetName() const { return "Snake"; }
+
+  virtual bool SetParameters(int chain, int parallel, const char *param) {
+    if (param == NULL || strlen(param) == 0) {
+      source_side_ = 0;
+    } else if (strcmp(param, "left") == 0) {
+      source_side_ = 0;
+    } else if (strcmp(param, "right") == 0) {
+      source_side_ = 1;
+    } else {
+      fprintf(stderr, "Invalid rotate parameter '%s'\n", param);
+    }
+    if (chain < 2) {  // technically, a chain of 2 would work, but somewhat pointless
+      fprintf(stderr, "Snake: need at least --led-chain=2 for useful folding\n");
+      return false;
+    }
+    chain_ = chain;
+    parallel_ = parallel;
+    return true;
+  }
+
+  virtual bool GetSizeMapping(int matrix_width, int matrix_height,
+                              int *visible_width, int *visible_height)
+  const {
+    if (matrix_height % parallel_ != 0) {
+      fprintf(stderr, "%s For parallel=%d we would expect the height=%d "
+                      "to be divisible by %d ??\n",
+              GetName(), parallel_, matrix_height, parallel_);
+      return false;
+    }
+    const int panel_width = matrix_width / chain_;
+    const int panel_height = matrix_height / parallel_;
+    *visible_width = chain_ * panel_height;
+    *visible_height = panel_width * parallel_;
+    return true;
+  }
+
+  virtual void MapVisibleToMatrix(int matrix_width, int matrix_height,
+                                  int x, int y,
+                                  int *matrix_x, int *matrix_y) const {
+
+    const int panel_width = matrix_width / chain_;
+    const int panel_height = matrix_height / parallel_;
+    const int visible_width = panel_height * chain_;
+    const int chain_height = panel_width;
+    const int base_y = (y / chain_height) * panel_height;
+    y %= chain_height;
+    int panel_pos;
+    if (source_side_ == 0) {
+      panel_pos = chain_ - x / panel_height - 1;
+    } else {
+      panel_pos = x / panel_height;
+    }
+    x = (visible_width - x - 1) % panel_height;
+    if (panel_pos % 2) {
+      y = panel_width - y - 1;
+      x = panel_height - x - 1;
+    }
+    *matrix_x = y + panel_width * panel_pos;
+    *matrix_y = base_y + x;
+  }
+private:
+  int chain_;
+  int parallel_;
+  int source_side_;  // 0 - source is connected to left most panel, 1 - to right most one
+};
+
+
 typedef std::map<std::string, PixelMapper*> MapperByName;
 static void RegisterPixelMapperInternal(MapperByName *registry,
                                         PixelMapper *mapper) {
@@ -178,6 +263,7 @@ static MapperByName *CreateMapperMap() {
   // Register all the default PixelMappers here.
   RegisterPixelMapperInternal(result, new RotatePixelMapper());
   RegisterPixelMapperInternal(result, new UArrangementMapper());
+  RegisterPixelMapperInternal(result, new SnakeArrangementMapper());
   return result;
 }
 
