@@ -233,6 +233,7 @@ public:
   // pins. But don't mess with bits already in use by the matrix :)
   GPIO *gpio() { return io_; }
 
+#ifndef RGB_LED_SUNXI
   // This function will return whenever the GPIO input pins
   // change (pins that are not already in use for output, that is) or the
   // timeout is reached. You need to have reserved the inputs with
@@ -254,6 +255,7 @@ public:
   //
   // Returns the bitmap of all GPIO input pins.
   uint32_t AwaitInputChange(int timeout_ms);
+#endif
 
   //-- Double- and Multibuffering.
 

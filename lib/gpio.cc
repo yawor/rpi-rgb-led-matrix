@@ -18,6 +18,10 @@
 
 #include "gpio.h"
 
+#ifdef RGB_LED_SUNXI
+#include "gpio_sunxi.cc"
+#else
+
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -638,3 +642,4 @@ uint32_t GetMicrosecondCounter() {
 }
 
 } // namespace rgb_matrix
+#endif

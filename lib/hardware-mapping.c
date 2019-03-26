@@ -22,6 +22,45 @@
 #define GPIO_BIT(b) (1<<(b))
 
 struct HardwareMapping matrix_hardware_mappings[] = {
+#ifdef RGB_LED_NANOPI_NEO
+  {
+    .name          = "regular",
+    // All pins are from PORT A
+    .output_enable = GPIO_BIT(5),
+    .clock         = GPIO_BIT(21),
+    .strobe        = GPIO_BIT(6),
+    .a             = GPIO_BIT(0),
+    .b             = GPIO_BIT(1),
+    .c             = GPIO_BIT(2),
+    .d             = GPIO_BIT(3),
+
+    .p0_r1         = GPIO_BIT(11),
+    .p0_g1         = GPIO_BIT(12),
+    .p0_b1         = GPIO_BIT(17),
+    .p0_r2         = GPIO_BIT(18),
+    .p0_g2         = GPIO_BIT(19),
+    .p0_b2         = GPIO_BIT(20),
+  }
+#elif defined(RGB_LED_NANOPI_NEOCORE)
+  {
+    .name          = "regular",
+    // All pins are from PORT A
+    .output_enable = GPIO_BIT(5),
+    .clock         = GPIO_BIT(3),
+    .strobe        = GPIO_BIT(6),
+    .a             = GPIO_BIT(14),
+    .b             = GPIO_BIT(15),
+    .c             = GPIO_BIT(16),
+    .d             = GPIO_BIT(17),
+
+    .p0_r1         = GPIO_BIT(0),
+    .p0_g1         = GPIO_BIT(1),
+    .p0_b1         = GPIO_BIT(2),
+    .p0_r2         = GPIO_BIT(11),
+    .p0_g2         = GPIO_BIT(12),
+    .p0_b2         = GPIO_BIT(13),
+  }
+#else
   /*
    * The regular hardware mapping described in the wiring.md and used
    * by the adapter PCBs.
@@ -214,4 +253,5 @@ struct HardwareMapping matrix_hardware_mappings[] = {
   },
 
   {0}
+#endif
 };

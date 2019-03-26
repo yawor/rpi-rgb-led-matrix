@@ -20,6 +20,10 @@
 
 #include <vector>
 
+#if defined(RGB_LED_NANOPI_NEO) || defined(RGB_LED_NANOPI_NEOCORE)
+#define RGB_LED_SUNXI
+#endif
+
 // Putting this in our namespace to not collide with other things called like
 // this.
 namespace rgb_matrix {
@@ -54,40 +58,68 @@ class GPIO {
   // Set the bits that are '1' in the output. Leave the rest untouched.
   inline void SetBits(uint32_t value) {
     if (!value) return;
+#ifdef RGB_LED_SUNXI
+    cached_bits_ |= value;
+    *gpio_porta_dat_ = cached_bits_;
+#else
     *gpio_set_bits_ = value;
     for (int i = 0; i < slowdown_; ++i) {
       *gpio_set_bits_ = value;
     }
+#endif
   }
 
   // Clear the bits that are '1' in the output. Leave the rest untouched.
   inline void ClearBits(uint32_t value) {
     if (!value) return;
+#ifdef RGB_LED_SUNXI
+    cached_bits_ &= ~value;
+    *gpio_porta_dat_ = cached_bits_;
+#else
     *gpio_clr_bits_ = value;
     for (int i = 0; i < slowdown_; ++i) {
       *gpio_clr_bits_ = value;
     }
+#endif
   }
 
   // Write all the bits of "value" mentioned in "mask". Leave the rest untouched.
   inline void WriteMaskedBits(uint32_t value, uint32_t mask) {
+#ifdef RGB_LED_SUNXI
+    cached_bits_ = (cached_bits_ & ~mask) | (value & mask);
+    *gpio_porta_dat_ = cached_bits_;
+#else
     // Writing a word is two operations. The IO is actually pretty slow, so
     // this should probably  be unnoticable.
     ClearBits(~value & mask);
     SetBits(value & mask);
+#endif
   }
 
   inline void Write(uint32_t value) { WriteMaskedBits(value, output_bits_); }
+#ifdef RGB_LED_SUNXI
+#else
   inline uint32_t Read() const { return *gpio_read_bits_ & input_bits_; }
+#endif
 
  private:
+#ifdef RGB_LED_SUNXI
+  uint32_t cached_bits_;
+#endif
   uint32_t output_bits_;
+#ifndef RGB_LED_SUNXI
   uint32_t input_bits_;
   uint32_t reserved_bits_;
+#endif
   int slowdown_;
+#ifdef RGB_LED_SUNXI
+  volatile uint32_t *gpio_porta_base_;
+  volatile uint32_t *gpio_porta_dat_;
+#else
   volatile uint32_t *gpio_set_bits_;
   volatile uint32_t *gpio_clr_bits_;
   volatile uint32_t *gpio_read_bits_;
+#endif
 };
 
 // A PinPulser is a utility class that pulses a GPIO pin. There can be various
