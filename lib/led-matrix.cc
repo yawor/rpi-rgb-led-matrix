@@ -63,7 +63,9 @@ public:
       current_frame_(initial_frame), next_frame_(NULL),
       requested_frame_multiple_(1) {
     pthread_cond_init(&frame_done_, NULL);
+#ifndef RGB_LED_SUNXI
     pthread_cond_init(&input_change_, NULL);
+#endif
     switch (pwm_dither_bits) {
     case 0:
       start_bit_[0] = 0; start_bit_[1] = 0;
@@ -120,6 +122,7 @@ public:
         }
       }
 
+#ifndef RGB_LED_SUNXI
       // Read input bits.
       const uint32_t inputs = io_->Read();
       if (inputs != last_gpio_bits) {
@@ -128,6 +131,7 @@ public:
         gpio_inputs_ = inputs;
         pthread_cond_signal(&input_change_);
       }
+#endif
 
       ++frame_count;
       ++low_bit_sequence;
@@ -160,11 +164,13 @@ public:
     return previous;
   }
 
+#ifndef RGB_LED_SUNXI
   uint32_t AwaitInputChange(int timeout_ms) {
     MutexLock l(&input_sync_);
     input_sync_.WaitOn(&input_change_, timeout_ms);
     return gpio_inputs_;
   }
+#endif
 
 private:
   inline bool running() {
@@ -179,9 +185,11 @@ private:
   Mutex running_mutex_;
   bool running_;
 
+#ifndef RGB_LED_SUNXI
   Mutex input_sync_;
   pthread_cond_t input_change_;
   uint32_t gpio_inputs_;
+#endif
 
   Mutex frame_sync_;
   pthread_cond_t frame_done_;
@@ -389,10 +397,12 @@ FrameCanvas *RGBMatrix::SwapOnVSync(FrameCanvas *other,
   return previous;
 }
 
+#ifndef RGB_LED_SUNXI
 uint32_t RGBMatrix::AwaitInputChange(int timeout_ms) {
   if (!updater_) return 0;
   return updater_->AwaitInputChange(timeout_ms);
 }
+#endif
 
 bool RGBMatrix::SetPWMBits(uint8_t value) {
   const bool success = active_->framebuffer()->SetPWMBits(value);
