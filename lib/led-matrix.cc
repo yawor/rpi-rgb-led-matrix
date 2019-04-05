@@ -389,6 +389,10 @@ FrameCanvas *RGBMatrix::CreateFrameCanvas() {
   return result;
 }
 
+FrameCanvas *RGBMatrix::ActiveFrameCanvas() {
+  return active_;
+}
+
 FrameCanvas *RGBMatrix::SwapOnVSync(FrameCanvas *other,
                                     unsigned frame_fraction) {
   if (frame_fraction == 0) frame_fraction = 1; // correct user error.

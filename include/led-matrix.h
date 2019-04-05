@@ -271,6 +271,9 @@ public:
   // don't have to worry about deleting them.
   FrameCanvas *CreateFrameCanvas();
 
+  // Returns current active FrameCanvas.
+  FrameCanvas *ActiveFrameCanvas();
+
   // This method waits to the next VSync and swaps the active buffer with the
   // supplied buffer. The formerly active buffer is returned.
   //
